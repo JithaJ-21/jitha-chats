@@ -11,14 +11,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                sh 'echo Build step executed'
+                bat 'echo Build step executed'
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                sh 'echo Test step executed'
+                bat 'echo Test step executed'
             }
         }
 
