@@ -1,0 +1,33 @@
+pipeline {
+    agent any
+    stages {
+        stage('Start') {
+            steps {
+                echo 'Pipeline Started!'
+            }
+        }
+        stage('Print Date') {
+            steps {
+                echo 'Current Date and Time:'
+                bat 'date /T & time /T'
+            }
+        }
+        stage('List Files') {
+            steps {
+                echo 'Listing files in workspace:'
+                bat 'dir'
+            }
+        }
+        stage('Simple Task') {
+            steps {
+                echo 'Running a simple task...'
+                bat 'echo Hello from Jenkins!'
+            }
+        }
+        stage('Finish') {
+            steps {
+                echo 'Pipeline Finished Successfully!'
+            }
+        }
+    }
+}
