@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jitha's Chat App 💬</title>
+  <style>
+    body { font-family: "Segoe UI", sans-serif; background: #0d1117; color: #c9d1d9; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    #chat-box { width: 400px; height: 400px; overflow-y: auto; border: 1px solid #30363d; border-radius: 10px; padding: 10px; background: #161b22; margin-bottom: 10px; }
+    .message { padding: 5px; margin: 3px 0; }
+    .system { color: #8b949e; font-style: italic; }
+    .user { color: #58a6ff; }
+    #controls { display: flex; gap: 5px; width: 400px; }
+    input, button { padding: 8px; border-radius: 6px; border: 1px solid #30363d; background: #0d1117; color: #c9d1d9; }
+    input { flex: 1; }
+    button { background: #238636; cursor: pointer; }
+    button:hover { background: #2ea043; }
+    #status { margin-bottom: 8px; font-size: 0.9em; color: #8b949e; }
+  </style>
+</head>
+<body>
+
+  <h2>💬 Jitha's AWS Chat App</h2>
+  <div id="status">Connecting...</div>
+  <div id="chat-box"></div>
+
+  <div id="controls">
+    <input id="nameInput" type="text" placeholder="Enter your name" />
+    <button id="setNameBtn">Set Name</button>
+  </div>
+
+  <div id="controls" style="margin-top:5px;">
+    <input id="messageInput" type="text" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+
+  <script>
+    const WS_URL = "wss://589oyf3m24.execute-api.us-east-1.amazonaws.com/prod";
+
+    let socket;
+    let userName = "";
+
+    const statusEl = document.getElementById("status");
+    const chatBox = document.getElementById("chat-box");
+    const nameInput = document.getElementById("nameInput");
+    const messageInput = document.getElementById("messageInput");
+    const setNameBtn = document.getElementById("setNameBtn");
+    const sendBtn = document.getElementById("sendBtn");
+
+    // Connect
+    function connect() {
+      socket = new WebSocket(WS_URL);
+
+      socket.onopen = () => {
+        statusEl.textContent = "✅ Connected to chat server!";
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.systemMessage) {
+          addMessage(data.systemMessage, "system");
+        } else if (data.members) {
+          addMessage(`👥 Members: ${data.members.join(", ")}`, "system");
+        } else if (data.from && data.message) {
+          // Show "you" if the message is from yourself
+          const displayName = (data.from === userName) ? "you" : data.from;
+          addMessage(`${displayName}: ${data.message}`, "user");
+        }
+      };
+
+      socket.onclose = () => {
+        statusEl.textContent = "❌ Disconnected. Reconnecting in 3s...";
+        setTimeout(connect, 3000);
+      };
+
+      socket.onerror = (err) => {
+        console.error("WebSocket error:", err);
+        statusEl.textContent = "⚠️ Connection error.";
+      };
+    }
+
+    function addMessage(text, type = "user") {
+      const div = document.createElement("div");
+      div.className = `message ${type}`;
+      div.textContent = text;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    setNameBtn.onclick = () => {
+      const name = nameInput.value.trim();
+      if (!name || socket.readyState !== WebSocket.OPEN) return;
+      userName = name;
+      socket.send(JSON.stringify({ action: "setName", name }));
+      addMessage(`You set your name as "${name}"`, "system");
+      nameInput.value = "";
+    };
+
+    sendBtn.onclick = () => {
+      const msg = messageInput.value.trim();
+      if (!msg || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({ action: "sendMessage", message: msg }));
+      messageInput.value = "";
+    };
+
+    connect();
+  </script>
+</body>
+</html>
